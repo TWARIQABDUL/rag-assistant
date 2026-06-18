@@ -5,3 +5,7 @@ groq
 pypdf
 python-dotenv
 numpy
+PyMuPDF
+pytesseract
+Pillow
+google-genai
