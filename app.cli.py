@@ -21,8 +21,8 @@ if __name__ == "__main__":
     # 2. Load the Local Database
     INDEX_PATH = "faiss_index.bin"
     METADATA_PATH = "chunks_meta.json"
-    TOP_K = 5  # We grab the top 5 most relevant chunks
-
+    TOP_K = 20  # We grab the top 20 most relevant chunks
+    stop_words = ["iyi", "raporo", "ivuga", "iki", "ku", "kuri", "niki", "ni", "bivuga", "yakoze", "?", "ese", "mbese"]
     if os.path.exists(INDEX_PATH) and os.path.exists(METADATA_PATH):
         index = faiss.read_index(INDEX_PATH)
         with open(METADATA_PATH, "r") as f:
@@ -69,19 +69,43 @@ if __name__ == "__main__":
                 )
 
                 query_vector = np.array([query_result.embeddings[0].values]).astype("float32")
-
                 # Step B: Search Local FAISS DB
                 distances, indices = index.search(query_vector, k=TOP_K)
 
                 retrieved_context = ""
                 sources_used = set()
+                retrieved_chunk_indices = set()
+
+                # --- 1. VECTOR SEARCH (FAISS) ---
                 for i in range(TOP_K):
                     chunk_idx = indices[0][i]
                     if chunk_idx < len(metadata):
+                        retrieved_chunk_indices.add(chunk_idx)
                         chunk_data = metadata[chunk_idx]
-                        retrieved_context += f"\n{chunk_data['text']}\n"
+                        retrieved_context += f"\n[VECTOR MATCH] {chunk_data['text']}\n"
                         sources_used.add(chunk_data['source_file'])
 
+                # --- 2. KEYWORD SEARCH FALLBACK (The Fix) ---
+                # Split the query, remove stop words, and put it back together
+                query_words = user_query.lower().replace("?", " ").split()
+                filtered_words = [word for word in query_words if word not in stop_words]
+                exact_keyword = " ".join(filtered_words).strip()
+                
+                # Only run if there is a real word left to search for
+                if len(exact_keyword) > 3:
+                    for idx, chunk_data in enumerate(metadata):
+                        # Look for exact text match in the JSON
+                        if exact_keyword in chunk_data['text'].lower():
+                            if idx not in retrieved_chunk_indices:
+                                retrieved_context += f"\n[KEYWORD MATCH (Chunk {idx})] {chunk_data['text']}\n"
+                                sources_used.add(chunk_data['source_file'])
+                                retrieved_chunk_indices.add(idx)
+                                
+                                # Limit to avoid overflowing the prompt (Safety limit)
+                                if len(retrieved_chunk_indices) > TOP_K + 5:
+                                    break
+                
+                print(f"\n[Context Retrieved]: {retrieved_context}")
                 # Format History
                 history_context = ""
                 for turn in chat_history:
