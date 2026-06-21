@@ -9,3 +9,6 @@ PyMuPDF
 pytesseract
 Pillow
 google-genai
+fastapi
+uvicorn
+pydantic
