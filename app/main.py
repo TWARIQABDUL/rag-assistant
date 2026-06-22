@@ -1,15 +1,13 @@
 import time
-# from fastapi import FastAPI, HTTPException, status
 from pydantic import BaseModel, Field
 from typing import List, Dict, Any
-# from engine import run_rag_pipeline
 from fastapi import FastAPI, HTTPException, status, UploadFile, File
 import shutil
 import tempfile
 import os
 
-from app.engine import run_rag_pipeline, add_pdf_to_index # Make sure to import it!
-from app.engine import run_rag_pipeline
+from app.engine import run_rag_pipeline, add_pdf_to_index
+# from app.engine import run_rag_pipeline
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
