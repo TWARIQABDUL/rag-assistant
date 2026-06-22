@@ -10,10 +10,20 @@ import os
 
 from app.engine import run_rag_pipeline, add_pdf_to_index # Make sure to import it!
 from app.engine import run_rag_pipeline
+from fastapi.middleware.cors import CORSMiddleware
+
 app = FastAPI(
     title="Rwandan Legal & Gov RAG Engine",
     description="API service providing hybrid semantic search and generation over government documentation.",
     version="1.0.0"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
 )
 
 # --- Request/Response Schemas ---
